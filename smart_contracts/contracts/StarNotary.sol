@@ -66,7 +66,7 @@ contract StarNotary is ERC721 {
         return starCoordinatesToTokenId[this.generateStarCoordinatesHash(_ra, _dec, _mag)];
     }
 
-    function generateStarCoordinatesHash(string _ra, string _dec, string _mag) private pure returns(bytes32) {
+    function generateStarCoordinatesHash(string _ra, string _dec, string _mag) public pure returns(bytes32) {
         return keccak256(abi.encodePacked(_ra, _dec, _mag));
     }
 
@@ -98,8 +98,8 @@ contract StarNotary is ERC721 {
         return ERC721.ownerOf(_tokenId);
     }
 
-    function starsForSale(uint256 _tokenId) public {
-
+    function starsForSale(uint256 _tokenId) public view returns(uint256){
+        return starsForSale[_tokenId];
     }
 
     function tokenIdToStarInfo(uint256 _tokenId) public view returns(string, string, string, string, string) {
