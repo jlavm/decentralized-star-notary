@@ -13,28 +13,43 @@ contract('StarNotary', accounts => {
     let dec = "dec_121.874"
     let mag = "mag_245.978"
     let starId = 1
+    let starIdTwo = 2
 
     beforeEach(async function() { 
         this.contract = await StarNotary.new({from: defaultAccount});
-    })
+    });
 
     describe('can create a star', () => { 
         it('can create a star and get its name', async function () { 
-            await this.contract.createStar(name, starStory, ra, dec, mag, starId, {from: defaultAccount});
+            await this.contract.createStar(name, starStory, ra, dec, mag, starId, {from: user1});
         
             assert.deepEqual(await this.contract.tokenIdToStarInfo(starId), [name, starStory, ra, dec, mag]);
         })
+    });
+
+     describe('Check if star exist', () => {
+
+        beforeEach(async function () { 
+            await this.contract.createStar(name, starStory, ra, dec, mag, starId, {from: defaultAccount});
+        })
+
+        it('Check if star is already assigned', async () => {
+            assert.equal(await this.contract.checkIfStarExist(ra, dec, mag, {from: defaultAccount}), true);
+        });
     })
 
     describe('star uniqueness', () => { 
+
+        beforeEach(async () => { 
+            await this.contract.createStar(name, starStory, ra, dec, mag, starId, {from: user1});  
+        });
+
         it('only stars unique stars can be minted', async function() { 
-            // first we mint our first star
-            // then we try to mint the same star, and we expect an error
+            await expectThrow(this.contract.createStar(name, starStory, ra, dec, mag, starId, {from: user1}));
         })
 
         it('only stars unique stars can be minted even if their ID is different', async function() { 
-            // first we mint our first star
-            // then we try to mint the same star, and we expect an error
+            await expectThrow(this.contract.createStar(name, starStory, ra, dec, mag, starIdTwo, {from: user1}));
         })
 
         it('minting unique stars does not fail', async function() { 
@@ -50,7 +65,7 @@ contract('StarNotary', accounts => {
                 assert.equal(starInfo[0], name)
             }
         })
-    })
+    });
 
     describe('buying and selling stars', () => { 
 
@@ -88,7 +103,7 @@ contract('StarNotary', accounts => {
             })
         })
     })
-})
+});
 
 var expectThrow = async function(promise) { 
     try { 
