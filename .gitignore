@@ -44,7 +44,7 @@ typings/
 
 # Optional eslint cache
 .eslintcache
-s
+
 # Optional REPL history
 .node_repl_history
 
@@ -61,3 +61,7 @@ s
 .next
 
 build/
+
+truffle.js
+
+truffle-config.js
