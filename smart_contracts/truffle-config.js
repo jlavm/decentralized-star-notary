@@ -13,8 +13,8 @@
  */
 var HDWalletProvider = require('truffle-hdwallet-provider');
 
-const mnemonic = 'PASTE MNEMONIC HERE';
-const infura = 'PASTE YOUR INFURA URL';
+const mnemonic = 'trick core barely fold sample icon display hollow smoke task emotion pepper';
+const infura = 'https://rinkeby.infura.io/v3/0b9b105a9d734105978462df3e9ec6b8';
 
 module.exports = {
     networks: {
