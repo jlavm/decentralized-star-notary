@@ -33,36 +33,24 @@ contract('StarNotary', accounts => {
         })
     });
 
-    describe('Check if star exist', () => {
-
-        beforeEach(async function() {
-            await this.contract.createStar(name, starStory, ra, dec, mag, starId, {
-                from: user1
-            });
-        })
-
-        it('Check if star is already assigned', async () => {
-            assert.equal(await this.contract.checkIfStarExist(ra, dec, mag, {
-                from: user1
-            }), true);
-        });
-    })
 
     describe('star uniqueness', () => {
 
-        beforeEach(async () => {
+        it('only stars unique stars can be minted', async function() {
             await this.contract.createStar(name, starStory, ra, dec, mag, starId, {
                 from: user1
-            });
-        });
-
-        it('only stars unique stars can be minted', async function() {
+            })
+            
             await expectThrow(this.contract.createStar(name, starStory, ra, dec, mag, starId, {
                 from: user1
             }));
         })
 
         it('only stars unique stars can be minted even if their ID is different', async function() {
+            await this.contract.createStar(name, starStory, ra, dec, mag, starId, {
+                from: user1
+            })
+
             await expectThrow(this.contract.createStar(name, starStory, ra, dec, mag, starIdTwo, {
                 from: user1
             }));
@@ -85,6 +73,19 @@ contract('StarNotary', accounts => {
         })
     });
 
+    describe('Check if star exist', () => {
+
+        it('only stars unique stars can be minted', async function() {
+            await this.contract.createStar(name, starStory, ra, dec, mag, starId, {
+                from: user1
+            })
+
+            assert.equal(await this.contract.checkIfStarExist(ra, dec, mag, {
+                from: user1
+            }), true);
+        });
+    });
+
     describe('buying and selling stars', () => {
 
         let starPrice = web3.toWei(.01, "ether")
@@ -104,6 +105,7 @@ contract('StarNotary', accounts => {
         })
 
         describe('user2 can buy a star that was put up for sale', () => {
+
             beforeEach(async function() {
                 await this.contract.putStarUpForSale(starId, starPrice, {
                     from: user1
@@ -133,105 +135,109 @@ contract('StarNotary', accounts => {
                 assert.equal(balanceOfUser2BeforeTransaction.sub(balanceAfterUser2BuysStar), starPrice);
             })
         })
-    })
-});
+    });
 
-describe('can create a token', () => {
+    describe('can create a token', () => {
 
-    beforeEach(async function() {
-        tx = await this.contract.mint(starId, {
-            from: user2
+        beforeEach(async function() {
+            tx = await this.contract.mint(starId, {
+                from: user1
+            })
+        })
+
+        it('ownerOf tokenId is user1', async function() {
+            assert.equal(await this.contract.ownerOf(starId), user1);
+        })
+
+        it('balanceOf user1 is incremented by 1', async function() {
+            const balance = await this.contract.balanceOf(user1);
+            assert.equal(balance.toNumber(), 1);
+        })
+
+        it('emits the correct event during creation of a new token', async function() {
+            assert.equal(tx.logs[0].event, 'Transfer')
         })
     })
 
-    it('ownerOf tokenId is user1', async function() {
-        assert.equal(await this.contract.ownerOf(starId), user1);
-    })
+    describe('can transfer token', () => {
 
-    it('balanceOf user1 is incremented by 1', async function() {
-        const balance = await this.contract.balanceOf(user1);
-        assert.equal(balance.toNumber(), 1);
-    })
+        beforeEach(async function() {
+            await this.contract.mint(starId, {
+                from: user1
+            })
 
-    it('emits the correct event during creation of a new token', async function() {
-        assert.equal(tx.logs[0].event, 'Transfer')
-    })
-})
-
-describe('can transfer token', () => {
-
-    beforeEach(async function() {
-        await this.contract.mint(starId, {
-            from: user1
+            tx = await this.contract.transferFrom(user1, user2, starId, {
+                from: user1
+            })
         })
 
-        tx = await this.contract.transferFrom(user1, user2, starId, {
-            from: user1
+        it('token has new owner, user2', async function() {
+            assert.equal(await this.contract.ownerOf(starId), user2);
         })
-    })
 
-    it('token has new owner, user2', async function() {
-        assert.equal(await this.contract.ownerOf(starId), user2);
-    })
+        it('emits the correct event', async function() {
+            assert.equal(tx.logs[0].event, 'Transfer');
+            assert.equal(tx.logs[0].args.tokenId, starId);
+            assert.equal(tx.logs[0].args.to, user2);
+            assert.equal(tx.logs[0].args.from, user1);
+        })
 
-    it('emits the correct event', async function() {
-        assert.equal(tx.logs[0].event, 'Transfer');
-        assert.equal(tx.logs[0].args.tokenId, starId);
-        assert.equal(tx.logs[0].args.to, user2);
-        assert.equal(tx.logs[0].args.from, user1);
-    })
+        it('only permissioned users can transfer tokens', async function() {
+            await expectThrow(this.contract.safeTransferFrom(user1, defaultAccount, starId, {
+                from: defaultAccount
+            }));
 
-    it('only permissioned users can transfer tokens', async function() {
-        await expectThrow(this.contract.safeTransferFrom(user1, defaultAccount, starId, {
-            from: defaultAccount
-        }));
-
-    })
-})
-
-describe('Can grant approval to transfer', () => {
-
-    beforeEach(async () => {
-        await this.contract.createStar(name, starStory, ra, dec, mag, starId, {
-            from: user1
-        });
-        tx = await this.contract.approve(user2, starId, {
-            from: user1
-        });
+        })
     });
 
-    it('User2 is setted as an approved address', async () => {
-        assert.equal(await this.contract.getApproved(starId), user2);
-    });
+    describe('Can grant approval to transfer', () => {
 
-    it('User2 can now transfer the tokenId 1', async () => {
-        await this.contract.transferFrom(user1, user2, starId, {
-            from: user2
+        beforeEach(async function() {
+            await this.contract.createStar(name, starStory, ra, dec, mag, starId, {
+                from: user1
+            });
+
+            tx = await this.contract.approve(user2, starId, {
+                from: user1
+            });
         });
 
-        assert.equal(await this.contract.ownerOf(starId), user2);
-    });
-
-    it('Emits the correct event', async () => {
-        assert.equal(tx.logs[0].event, 'Approval');
-    });
-});
-
-describe('can set an operator', () => {
-
-    beforeEach(async function() {
-        await this.contract.mint(starId, {
-            from: user1
+        it('user2 is setted as an approved address', async function() {
+            assert.equal(await this.contract.getApproved(starId), user2);
         });
-        await this.contract.setApprovalForAll(defaultAccount, true, {
-            from: user1
+
+
+        it('user2 can now transfer the tokenId 1', async function() {
+            await this.contract.transferFrom(user1, user2, starId, {
+                from: user2
+            });
+
+            assert.equal(await this.contract.ownerOf(starId), user2);
+        });
+
+        it('emits the correct event', async function() {
+            assert.equal(tx.logs[0].event, 'Approval');
         });
     });
 
-    it('can set an operator', async function() {
-        assert.equal(
-            await this.contract.isApprovedForAll(user1, defaultAccount), true);
+    describe('can set an operator', () => {
+
+        beforeEach(async function() {
+            await this.contract.mint(starId, {
+                from: user1
+            });
+
+            await this.contract.setApprovalForAll(defaultAccount, true, {
+                from: user1
+            });
+        });
+
+        it('can set an operator', async function() {
+            assert.equal(
+                await this.contract.isApprovedForAll(user1, defaultAccount), true);
+        });
     });
+
 });
 
 var expectThrow = async function(promise) {
