@@ -46,7 +46,7 @@
                      </div>
                   </div>
                   <div class="col-md-6 mb-3">
-                     <label for="star-price-sale">Star Name</label>
+                     <label for="star-price-sale">Star Price</label>
                      <input type="text" class="form-control" id="star-price-sale" placeholder="Star price" required="">
                      <div class="invalid-feedback">
                         Invalid Star price
@@ -582,7 +582,7 @@
                      if (!error) {
                          console.log(result)
                          document.getElementById("star-token-search").value = '';
-                         document.getElementById("star-result").innerText = 'Star searched: '+ JSON.stringify(result) + result[0] + result[1] + result[2] + result[3];
+                         document.getElementById("star-result").innerText = 'Star searched: '+ JSON.stringify(result);
                          console.log('Star found: ', result);
                      } else {
                          document.getElementById('star-result').innerText = error.message;
